@@ -1,7 +1,6 @@
 # Clase de introducción al uso de consultas espaciales en PosrgreSQL-PostGIS
 
-El objetivo de esta práctica es entender la forma en que se deben realizar las consultas espaciales y no espaciales haciendo uso del lenguaje SQL (Structured Query Language)
-
+El objetivo de esta práctica es entender la forma en que se deben realizar las consultas espaciales y no espaciales haciendo uso del lenguaje SQL (Structured Query Language). Todos los datos de la práctica pueden ser descargados del siguiente [link](https://drive.google.com/drive/folders/1hzKPipsvvtnzqzkHqaQQ9VLM45J4P6X7?usp=sharing)
 
 En esta práctica vamos a comenzar a trabajar con dos tipos de datos, los espciales y los no espaciales para obtener información reelevante de una zona en específico. En este caso una parte de la Zona Metropolitana del Valle de México y el censo de población. 
 
