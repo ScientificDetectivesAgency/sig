@@ -32,9 +32,9 @@ Ambas tablas comparten dos columnas la de id y la de manzana_cvegeo, un error co
 
 
 ``` sql
-alter table practica01.manzanas_cdmx rename column municipio_ to municipio_cvegeo;
-alter table practica01.manzanas_cdmx rename column manzana_cv to manzana_cvegeo;
-alter table practica01.manzanas_cdmx rename column entidad_cv to entidad_cvegeo;
+alter table practica01.manzanas_cdmx rename column NOMBRE_COLUMNA to municipio_cvegeo;
+alter table practica01.manzanas_cdmx rename column NOMBRE_COLUMNA to manzana_cvegeo;
+alter table practica01.manzanas_cdmx rename column NOMBRE_COLUMNA to entidad_cvegeo;
 ``` 
 Repite lo anterior para la tabla de municipio_cdmx 
 
