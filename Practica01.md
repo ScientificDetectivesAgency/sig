@@ -303,8 +303,3 @@ join practica01.municipio_cdmx b
 on a.municipio_cvegeo = b.municipio_cvegeo
 order by delito_area desc;
 ``` 
-
-
-
-
-
