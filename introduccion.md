@@ -51,8 +51,7 @@ create index nombre_indice_gix on esquema.tabla1 using GIST(columna_geometría);
 ``` sql
 create index manzanas_cdmx_gix on practica01.manzanas_cdmx using GIST(geom);
 ```
-
-Ahora creamos los constraints necesarios para agregar una llave primaria PK.
+Creamos los constraints necesarios para agregar una llave primaria PK.
 
 ``` sql
 ALTER TABLE practica01.manzanas_cdmx ALTER COLUMN "manzana_cvegeo" SET NOT NULL;
@@ -69,7 +68,7 @@ Para eliminar los duplicados corremos la siguiente consulta y creamos otra tabla
 create table practica1.manzanas_zmvm_sd as
 select DISTINCT ON (columna_identificador) * from esquema.tabla
 ```
-# AHORA PODEMOS COMENZAR A HACER UNIONES
+# PODEMOS COMENZAR A HACER UNIONES
 
 Las funciones JOIN unen las tablas ya sea a través de una clave unica o con ayuda de funciones espaciales. Estas uniones nos permiten seleecionar los datos que utilizaremos de cada tabla a través de la siguiente sintaxis general. 
 
@@ -98,16 +97,19 @@ on mc.manzana_cvegeo = dm.manzana_cvegeo
 SELECT AddGeometryColumn ('practica01','llamadas911','geom',4326,'POINT',2);
 UPDATE practica01.llamadas911 SET geom = ST_SetSRID(ST_MakePoint(longitud::float, latitud::float), 4326);
 
-Para identificar las alcaldías que son de mayor interés para este trabajo tenemos que plantear dos preguntas importantes: 
-1) ¿En qué alcaldía hay mayor número de delitos?
-2) ¿Cuál es la alcaldía con más áreas verdes? 
-3) 
+
 # TIPOS DE DATOS
 
 Cada columna de una tabla de la base de datos debe tener un nombre y un tipo de dato. Se debe decidir qué tipo de datos se almacenará dentro de cada columna basado en la información que se espere extraer. Vamos a revisar las columnas y su tipo de datos para determinar cuales necesitamos cambiar para contestar   preguntas de investigación como:
 
 1) ¿En qué alcaldía hay mayor número de delitos?
-2) ¿Cuál es la alcaldía con más áreas verdes? 
+2) ¿Qué alcaldía tiene mayor número de áreas verdes? 
+
+NOTA: Para esto usaremos funciones de agregación. Estas funciones nos permiten hacer operaciones sobre los registros en una columna y el numero de registros en la tabla.  
+Como habrán notado ni la tabla de llamadas del 911 ni la de áreas verdes cuenta con un identificador de alcaldía o manzana, por lo que necesitaremos agregarlo a ambas.    
+
+Pero primero, tenemos que generar las geometrías de la tabla llamadas 911 y darle el formato adecuado a cada columna para trabajar con ella 
+sobre todo aquellas que contienen datos de fechas y horarios. 
 
 ``` sql
 select column_name, data_type 
@@ -157,7 +159,7 @@ Todos los sistemas operativos tiene la capacidad de decodificar el tiempo, Times
 
 Cambiaremos las columnas fecha_creacion y fecha_cierre a date y hora_creacion y hora_cierre a time. 
 
-**FROM VARCHAR TO DATE
+### FROM VARCHAR TO DATE
 ``` sql
 select * from practica01.llamadas911_cdmx l limit 100
 
@@ -172,7 +174,7 @@ ALTER COLUMN fecha_cierre TYPE date USING TO_DATE(fecha_cierre, 'DD-MM-YY');
 ```
 ¿Qué diferencia encuentras en el formato de fecha de fecha_creacion y fecha_cierre?
 
-**FROM VARCHAR TO TIME
+### FROM VARCHAR TO TIME
 ``` sql
 SELECT to_timestamp(hora_creacion , 'HH24:MI:SS' )::time as hora_creacion , 
        to_timestamp(hora_cierre, 'HH24:MI:SS' )::time as hora_cierre 
@@ -186,7 +188,7 @@ ALTER TABLE practica01.llamadas911_cdmx
 ALTER COLUMN hora_cierre TYPE time USING to_timestamp(hora_cierre, 'HH24:MI:SS' )::time;
 ```
 
-**CONCATENANDO FECHA Y HORA EN TIMESTAMP
+### CONCATENANDO FECHA Y HORA EN TIMESTAMP
 ``` sql
 ALTER TABLE practica01.llamadas911_cdmx add column fh_cierre timestamp; 
 update practica01.llamadas911 set fh_cierre = fecha_cierre + hora_cierre; 
@@ -195,17 +197,28 @@ ALTER TABLE practica01.llamadas911_cdmx add column fh_creacion timestamp;
 UPDATE practica01.llamadas911 set fh_creacion = fecha_creacion + hora_creacion;
 ```
 
+# Trabajando con funciones de agregación
 
+Recordemos nuestras preguntas de investigación..!! 
+1) ¿En qué alcaldía hay mayor número de delitos?
+2) ¿Qué alcaldía tiene mayor número de áreas verdes? 
 
+Para constestarlas usaremos "funciones de agregación", estas funciones permiten hacer operaciones sobre los registros en una columna o el numero de registros de la tabla. Dicho de otra manera, calculan un único resultado a partir de un conjunto de valores de entrada.
+Para ambas preguntas necesitamos tener las columnas de manzanas_cvegeo y municipio_cvegeo, ya que estaremos haciendo la agregación sobre estas claves.   
+
+``` sql
 alter table practica01.areas_verdes2020 add column manzana_cvegeo varchar(16); 
 alter table practica01.areas_verdes2020 add column municipio_cvegeo varchar(5); 
 
 alter table practica01.llamadas911_cdmx add column manzana_cvegeo varchar(16); 
 alter table practica01.llamadas911_cdmx add column municipio_cvegeo varchar(5); 
+``` 
 
-Si visualizamos las tablas encontraremos estas nuevas columnas pero con valores nulos, ahora vamos a poblarlas a partir de una intersección espacial. 
+Si visualizamos las tablas encontraremos estas nuevas columnas pero con valores nulos, vamos a poblarlas a partir de una intersección espacial. 
 Primero lo haremos para las llamadas de 911
+NOTA: Estas consultas pueden tardar un momento así que se paciente =) ...! Mientras esperamos, vamos a visualizar los datos y hacernos algunas preguntas. 
 
+``` sql
 update practica01.llamadas911_cdmx a 
 set manzana_cvegeo = b.manzana_cvegeo 
 from practica01.manzanas_cdmx b
@@ -215,43 +228,32 @@ update practica01.llamadas911_cdmx a
 set municipio_cvegeo = b.municipio_cvegeo 
 from practica01.municipio_cdmx b
 where st_intersects(a.geom, b.geom); 
+``` 
 
-----------------------------------------------------------------
+Verifiquemos que se hayan actualizado correctamente la información
 
-update practica01.areas_verdes2020 a 
-set manzana_cvegeo = b.manzana_cvegeo 
-from practica01.manzanas_cdmx b
-where st_intersects(a.geom, b.geom);
-
-update practica01.areas_verdes2020 a 
-set municipio_cvegeo = b.municipio_cvegeo 
-from practica01.municipio_cdmx b
-where st_intersects(a.geom, b.geom); 
-
---Ahora revisaremos que se haya actualizado bien la información
-
+``` sql
 select * from practica01.llamadas911 l where manzana_cvegeo is null;
-Como verán tenemos muchos registros nulos a qué se debe esto 
-
 select * from practica01.llamadas911 l where municipio_cvegeo is null;
+```
 
 ¿Porqué tenemos valores nulos en la clave de manzana y no en la de municipio?
-¿Qué hay que cambiar de las consultas para actualizar la tabla de áreas verdes? 
+EJERCICIO: Intenta hacerlo para la tabla de áreas verdes
 
------------------------------------------------
-Filtrado de los datos
+### Filtrado de los datos
 
-Después de haber pre-procesado los datos, ahora podemos regresar a nuestra primer pregunta de investigación:
+Después de haber pre-procesado los datos, regresemos(de nuevo) a nuestra primer pregunta de investigación:
 1) ¿En qué alcaldía hay mayor número de delitos?
 
 Para poder contestarla tenemos que seleccionar solo aquellas llamadas que pudieran estar relacionadas con delitos que afecten sus visitantes. 
 
-Vamos a enlistar los distintos valores de la columna incidente_c4, que tiene información sobre el tipo de incidente
-
+Vamos a enlistar los distintos valores de la columna incidente_c4, que tiene información sobre el tipo de delito para identificar aquellos delitos que podrían afectar a un potencial visitante de las áreas verdes.
+``` sql
 select distinct (incidente_c4) from practica01.llamadas911 
+``` 
+Filtremos los datos
 
-Ahora filtramos los datos
-
+``` sql
 create table practica01.delitos_av_911 as
 select *
 from practica01.llamadas911_cdmx lc where 
@@ -275,53 +277,34 @@ incidente_c4 = 'Sexuales-Acoso' or
 incidente_c4 = 'Sexuales-Acoso en transporte público' or
 incidente_c4 = 'Sexuales-Otros/Vejaciones' or
 incidente_c4 = 'Sexuales-Violación';
+``` 
 
+### Comencemos a obtener información
 
-Ahora si podemos contar cuantos delitos hay por delegación y cuántos delitos tenemos a 5kilometros de las áreas verdes 
+Con la función count() podemos contar cuantos delitos hay por delegación y por kilometro cuadrado 
 
+``` sql
 select a.*, b.municipio_nombre
 from
 (select count(*) as delitos, municipio_cvegeo 
-from practica01.llamadas911_cdmx a
+from practica01.delitos_av_911 a
 group by municipio_cvegeo ) as a
 join practica01.municipio_cdmx b 
 on a.municipio_cvegeo = b.municipio_cvegeo
 order by delitos desc;
-
+``` 
+``` sql
 select a.*, b.geom, b.municipio_nombre, st_area(b.geom::geography)/1000000 as area_m2, delitos/(st_area(b.geom::geography)/1000000) as delito_area
 from
 (select count(*) as delitos, municipio_cvegeo 
-from practica01.llamadas911_cdmx a
+from practica01.delitos_av_911 a
 group by municipio_cvegeo ) as a
 join practica01.municipio_cdmx b 
 on a.municipio_cvegeo = b.municipio_cvegeo
 order by delito_area desc;
-
-Pero cuantos de estos delitos suceden cerca de las áreas verdes? 
-select count(*) as areas_verdes, b.municipio_cvegeo 
-from practica01.areas_verdes2020 av 
-join practica01.municipio_cdmx b 
-on st_intersects(st_centroid(av.geom), b.geom)
-group by b.municipio_cvegeo;  
-
-select foo.* from
-(with 
-  buf as (select st_buffer(a.geom::geography, 5000.0) as geom, 
-  				 a.municipio_cvegeo as mun, a.cve_av from practica01.areas_verdes2020 a)
-select count(b.*), buf.mun 
-	from practica01.llamadas911_cdmx b
-	join buf 
-	on st_intersects(buf.geom,b.geom)
-	group by buf.cve_av, buf.mun) as foo
-
-
-
-select * from practica01.areas_verdes2020 av limit 10
+``` 
 
 
 
 
 
-Para identificar las alcaldías que son de mayor interés para este trabajo tenemos que plantear dos preguntas importantes: 
-1) ¿En qué alcaldía hay mayor número de delitos?
-2) ¿Cuál es la alcaldía con más áreas verdes? 
