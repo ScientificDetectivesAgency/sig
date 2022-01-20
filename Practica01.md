@@ -247,11 +247,32 @@ Después de haber pre-procesado los datos, regresemos(de nuevo) a nuestra primer
 
 Para poder contestarla tenemos que seleccionar solo aquellas llamadas que pudieran estar relacionadas con delitos que afecten sus visitantes. 
 
+
 Vamos a enlistar los distintos valores de la columna incidente_c4, que tiene información sobre el tipo de delito para identificar aquellos delitos que podrían afectar a un potencial visitante de las áreas verdes.
 ``` sql
 select distinct (incidente_c4) from practica01.llamadas911 
 ``` 
+
 Filtremos los datos
+Verifica que los datos se encuentren en la codificación correcta, esto significa que no contienen caracteres especiales y tanto las ñ como los signos y simbolos están bien representados. En caso de tener caracteres especiales mal codificados, vamos a establecer el encoding por defecto de toda la base de datos: 
+
+``` sql
+update pg_database set encoding = pg_char_to_encoding('UTF8') where datname = 'practicas'
+```
+
+Ahora verifica que las columnas que contenpían estos caracteres estén corregidas. En caso de no haber cambiado puedes usar las siguientes consultas. 
+
+``` sql
+update esquema.tabla set columna_recodificada = convert_from(convert_to(columna_acodificar, 'latin-1'), 'utf-8'); 
+--nota que tanto la columna recodificada como la columna a codificar pueden ser la misma, solo en caso de haber creado una nueva columna serán distintos ambos campos
+```
+
+Hagamoslo para incidente_c4 de la tabla llamadas911_cdmx
+``` sql
+update practica01.llamadas911_cdmx set dia_semana = convert_from(convert_to(dia_semana, 'latin-1'), 'utf-8'); 
+```
+
+
 
 ``` sql
 create table practica01.delitos_av_911 as
@@ -279,9 +300,20 @@ incidente_c4 = 'Sexuales-Otros/Vejaciones' or
 incidente_c4 = 'Sexuales-Violación';
 ``` 
 
+Existen muchas formas para poder filtrar los datos, usar where y or no es precisamente la más compacta en cuanto al tamaño de la consulta listando las categorías. 
+
+``` sql
+create table practica01.delitos_av_911 as
+select *
+from practica01.llamadas911_cdmx lc where 
+incidente_c4 in( 'Accidente-Choque con Lesionados' , 'Accidente-Choque con Prensados', 'Accidente-Choque sin Lesionados', 'Cadáver-Arma Blanca', 'Cadáver-Arma de Fuego', 'Detención Ciudadana-Agresión','Detención Ciudadana-Atropellamiento', 'Detención Ciudadana-Delitos Sexuales', 'Detención Ciudadana-Robo', 'Disturbio-Disparos', 'Robo-Pasajero Transporte Público', 'Robo-Repartidor','Robo-Transeúnte','Robo-Vehiculo con Violencia','Robo-Vehículo sin Violencia','Sexuales-Abuso','Sexuales-Acoso', 'Sexuales-Acoso en transporte público', 'Sexuales-Otros/Vejaciones','Sexuales-Violación');
+``` 
+
+¿Cuándo usarías el primer ejemplo y en qué casos el segundo? 
+
 ### Comencemos a obtener información
 
-Con la función count() podemos contar cuantos delitos hay por delegación y por kilometro cuadrado 
+Con la función count() podemos contar cuantos delitos hay por delegación y por kilometro cuadrado, primero veamos en qué delegación hay más delitos 
 
 ``` sql
 select a.*, b.municipio_nombre
@@ -293,6 +325,11 @@ join practica01.municipio_cdmx b
 on a.municipio_cvegeo = b.municipio_cvegeo
 order by delitos desc;
 ``` 
+
+¿Consideras que esta consulta es adecuada para evaluar las condiciones de seguridad de una alcaldía, sin tomar en cuenta su área? ¿Por qué?
+
+Ahora vamos a calcular el número de delitos por unidad de área
+
 ``` sql
 select a.*, b.geom, b.municipio_nombre, st_area(b.geom::geography)/1000000 as area_m2, delitos/(st_area(b.geom::geography)/1000000) as delito_area
 from
@@ -302,4 +339,54 @@ group by municipio_cvegeo ) as a
 join practica01.municipio_cdmx b 
 on a.municipio_cvegeo = b.municipio_cvegeo
 order by delito_area desc;
+```
+¿Cuál de las dos consultas elegirías para representar mejor las condiciones de seguridad? 
+¿Cómo lo harías en QGis o ArcGIS? 
+
+Vamos a explorar los datos de delitos dentro y cerca de las áreas verdes:
+
+``` sql
+select b.categoria, count (a.*) as delitos
+from practica01.delitos_av_911 a, practica01.areas_verdes2020 b
+where st_intersects (b.geom, a.geom) 
+group by b.categoria
+order by delitos desc;
 ``` 
+
+¿Consideras que dado el tamaño de las áreas verdes este dato es representativo? 
+¿Cómo mejorarías este cálculo si quisieras saber qué delitos se cometen a 2km de distancia de las áreas verdes? 
+
+Ahora vamos a deternernos un momento a evaluar si la proyección que hemos estado usando es la adecuada para los calculos que tenemos que hacer sobre la base de datos, en caso de no serlo podemos reproyectara las capas usando la función ST_Transform 
+
+¿Qué proyección usarías su quisieras hacer calculos de área y distancias? 
+
+``` sql
+ALTER TABLE esquema.tabla
+ALTER COLUMN geom TYPE Geometry(tipo_geometría, SRID) USING ST_Transform(columna_geom, SRID);
+``` 
+
+``` sql
+ALTER TABLE practica01.areas_verdes2020
+ALTER COLUMN geom TYPE Geometry(point, 32614) USING ST_Transform(geom, 32614);
+-- ¿Qué error te da la base de datos? 
+-- ¿Cómo lo solucionarías?
+``` 
+
+Ahora volvemos a correr la consulta anterior 
+
+``` sql
+select b.categoria, count (a.*) as delitos
+from practica01.delitos_av_911 a, practica01.areas_verdes2020 b
+where st_intersects (b.geom, a.geom) 
+group by b.categoria
+order by delitos desc;
+``` 
+
+¿Qué sucede con los datos? ¿Por qué? 
+
+Ahora vamos a trabajar con el administrado de base de datos de QGis, hagamos un buffer 
+
+``` sql
+select st_buffer(a.geom,500.0)
+from practica01.areas_verdes2020 a
+```
