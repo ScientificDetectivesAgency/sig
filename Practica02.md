@@ -1,3 +1,9 @@
+# Primitivos espaciales
+En esta práctica aprenderás los fundamentos del modelo jerárquico de datos vectoriales. A partir de un conjunto de puntos construiremos líneas y polígonos.
+
+Pero antes... 
+
+Es necesario crear un nuevo esquema llamado: practica02 
 
 Supongamos que obtuvimos las coordenadas de varios puntos alrededor de un lago y las representamos como puntos, pero lo que necesitamos es un poligo que represente el lago. 
 El primer paso es crear una linea a partir de los puntos de la tabla waypoints y para ello debemos considerar el orden en el que los juntemos, por lo que es necesario ordenarlos por id, usando la cláusula GROUP BY track_id, que agrupa los puntos de acuerdo a un identificador de recorrido.
