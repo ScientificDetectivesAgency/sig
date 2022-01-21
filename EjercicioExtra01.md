@@ -7,9 +7,9 @@ En esta práctica vamos a comenzar a trabajar con dos tipos de datos, los espcia
 Para comenzar debes crear una base de datos que se llame practicas y con las siguiente consulta un esquema que se llame practica1
 
 ``` sql
-create database practicas;
+create database extras;
 create extension postgis;
-create schema practica1;
+create schema ej01;
 ```
 
 # PREPARANDO LOS DATOS
