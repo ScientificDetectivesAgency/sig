@@ -4,7 +4,6 @@ Todos los datos de la práctica pueden ser descargados del siguiente [link](http
 
 En esta práctica vamos a comenzar a trabajar con dos tipos de datos, los espciales y los no espaciales para obtener información reelevante de una zona en específico. En este caso una parte de la Zona Metropolitana del Valle de México y el censo de población. 
 
-Para comenzar debes crear una base de datos que se llame practicas y con las siguiente consulta un esquema que se llame practica1
 
 ``` sql
 create database extras;
