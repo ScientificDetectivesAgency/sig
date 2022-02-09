@@ -12,4 +12,4 @@
 
 *	#### ¿Cuál es el cultivo con menor superficie plantada en Chiapas?
 
-*	#### ¿Cuántas unidades de producción hay por municipio en el Estado de Chiapas
+*	#### ¿Cuántas unidades de producción hay por municipio en el Estado de Chiapas?
