@@ -6,15 +6,7 @@ create schema practicas03;
 
 **EJERCICIO[1]:** De la red de calles de la CDMX, crea una tabla que se llame ways_coyoacan en el eschema practica03 
 
-``` sql
-create table practica03.ways_coyoacan as
-select red.* 
-from practica03.ways red
-join (select * 
-	  from practica03.alcaldias_cdmx 
-	  where alcaldia_nombre = 'Coyoacán') as coy
-on st_intersects (red.the_geom, coy.geom);
-``` 
+
 
 Calcular la topología https://docs.pgrouting.org/3.0/es/pgr_createTopology.html
 
