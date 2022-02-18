@@ -94,4 +94,13 @@ from practica03.ways c,
   1799, 585, directed := false)) as ruta
 where c.gid = ruta.edge;
 ```
-
+alter table #tabla_puntos# add column closest_node bigint; 
+update #tabla_puntos# set closest_node = c.closest_node
+from  
+(select b.id as #id_puntos#, (
+  SELECT a.id
+  FROM #tabla_vertices# As a
+  ORDER BY b.geom <-> a.the_geom LIMIT 1
+)as closest_node
+from  #tabla_puntos# b) as c
+where c.#id_puntos# = #tabla_puntos#.id
