@@ -94,6 +94,8 @@ from practica03.ways c,
   1799, 585, directed := false)) as ruta
 where c.gid = ruta.edge;
 ```
+
+```sql
 alter table #tabla_puntos# add column closest_node bigint; 
 update #tabla_puntos# set closest_node = c.closest_node
 from  
@@ -104,3 +106,4 @@ from
 )as closest_node
 from  #tabla_puntos# b) as c
 where c.#id_puntos# = #tabla_puntos#.id
+```
