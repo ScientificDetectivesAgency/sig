@@ -94,6 +94,7 @@ from practica03.ways c,
   1799, 585, directed := false)) as ruta
 where c.gid = ruta.edge;
 ```
+Como habrás observado al hacer el join con la tabla de edges o arcos, es posible dibujar la ruta que se trazó. Pero, ¿Cómo podemos comenzar a trabajar con puntos reales? Primero necesitamos convertir los puntos a evaluar a nodos de la red, esto para identificar los nodos de inicio y destino y que todo esté en los mismos términos. Para ello vamos a utilizar la siguiente consulta:  
 
 ```sql
 alter table #tabla_puntos# add column closest_node bigint; 
@@ -107,3 +108,58 @@ from
 from  #tabla_puntos# b) as c
 where c.#id_puntos# = #tabla_puntos#.id
 ```
+Analiza qué hace, investiga para qué funciona este operado <->
+
+Vamos a trabajar con los datos de teatros que se encuentran en la base, recuerda que los datos deben estár en la misma proyección y acotados al área que se va a trabajar. Para este ejercicio debes elegir una alcaldía, recortar la red de calles y los puntos de teatros y sobre la tabla de teatros crear la columna closest_node que va a contener el nodo más cercano de la red. 
+
+```sql
+alter table #tabla_puntos# add column closest_node bigint; 
+update #tabla_puntos# set closest_node = c.closest_node
+from  
+(select b.id as #id_puntos#, (
+  SELECT a.id
+  FROM #tabla_vertices# As a
+  ORDER BY b.geom <-> a.the_geom LIMIT 1
+)as closest_node
+from  #tabla_puntos# b) as c
+where c.#id_puntos# = #tabla_puntos#.id
+```
+
+Ahora imagina que eres el/la secretaria de cultura de la Ciudad de México y te interesa crear corredores culturales temáticos. En este caso de teatros que puedan encontrarser cerca y representen una mejor oferta cultural. Además, como secretari@ de cultura te interesa fomentar actividades económicas asociadas a dichas actividades como restaurntes o cafeterías. 
+
+**EJERCICIO[5]:** En la unidad compartida encontrarás datos Directorio Estadístico Nacional de Unidades Económicas (DENUE), selecciona aquellos establecimientos que pertenecen a estas categorías (restaurantes y cafés) y crea una nueva tabla. A esta tabla también debes agregar y poblar la columna closest_node. 
+
+Ahora vamos a crear rutas que recorran varios puntos en el menor tiempo posible, para ello vamos a utilizar el algortimo del agente viajero. 
+
+### Agente viajero
+
+El problema del Agente viajero o TSP plantea la siguiente pregunta: 
+"Dada una lista de ciudades y las distancias entre cada par de ciudades, ¿cuál es la ruta más corta posible que visita cada ciudad exactamente una vez y regresa al ciudad de origen?"
+
+Ahora vamos a llevarlo a nuestro problema
+¿Cómo podemos trazar rutas que incluyan varios teatros cafés y restaurantes que estén cerca de estaciones de metro? 
+
+En este ejercicio, debes seleccionar zonas donde te interese trazar 4 rutas que partan y terminen en una estacion del metro y recorran 2 teatros una cafetería y un reataurante. Con los identificadores de los nodos calcula la secuencia optima para recorrerlos conla siguiente consulta: 
+
+
+```sql
+  SELECT seq, node, the_geom FROM pgr_TSP(
+    $$
+    SELECT * FROM pgr_dijkstraCostMatrix(
+        'SELECT id, source, target, cost FROM osmcdmx',
+        (
+            SELECT ARRAY[9769, 20604, 48398, 42533, 49819, 41141, 45520] node_array
+        ),
+        directed := false
+    )
+    $$,
+    start_id := 9769,
+    randomize := false
+) as res
+JOIN osmcdmx_vertices_pgr ovp 
+ON ovp.id = res.node;
+```
+
+**EJERCICIO[5]:** Investiga cómo puedo trazar una línea teniendo la información que me da el agente viajero
+**EJERCICIO[6]:** Investiga cómo calcular áreas de servicio y cómo funciona el algoritmo Dijkstra 
+
