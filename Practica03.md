@@ -160,6 +160,44 @@ JOIN osmcdmx_vertices_pgr ovp
 ON ovp.id = res.node;
 ```
 
+Ahora podemos trazar rutas por pares de nodos 
+
+```sql
+CREATE TABLE ruta_tsp as
+(WITH path_1_2 AS (
+        SELECT  b.geom, a.*
+		from (select node, edge as id, cost
+						from pgr_bdDijkstra('SELECT  id::int4, source::int4 ,target::int4,  cost FROM  osmcdmx',
+														 9769, 48398 ,FALSE)
+												)  as a join osmcdmx b on a.id = b.id),
+		path_2_3 AS (
+        SELECT  b.geom, a.*
+		from (select node, edge as id, cost
+						from pgr_bdDijkstra('SELECT  id::int4, source::int4 ,target::int4,  cost FROM  osmcdmx',
+														 48398, 42533 ,FALSE)
+												)  as a join osmcdmx b on a.id = b.id),  
+		path_3_4 AS (
+        SELECT  b.geom, a.*
+		from (select node, edge as id, cost
+						from pgr_bdDijkstra('SELECT  id::int4, source::int4 ,target::int4,  cost FROM  osmcdmx',
+														 42533, 45520,FALSE)
+												)  as a join osmcdmx b on a.id = b.id),
+												
+        path_4_5 AS (
+        SELECT  b.geom, a.*
+		from (select node, edge as id, cost
+						from pgr_bdDijkstra('SELECT  id::int4, source::int4 ,target::int4,  cost FROM  osmcdmx',
+														 20604,9769, FALSE)
+												)  as a join osmcdmx b on a.id = b.id)
+SELECT * FROM path_1_2
+union
+SELECT * FROM  path_2_3
+union
+SELECT * FROM path_3_4
+union
+SELECT * FROM  path_4_5)
+```
+
 **EJERCICIO[5]:** Investiga cómo puedo trazar una línea teniendo la información que me da el agente viajero
 **EJERCICIO[6]:** Investiga cómo calcular áreas de servicio y cómo funciona el algoritmo Dijkstra 
 
