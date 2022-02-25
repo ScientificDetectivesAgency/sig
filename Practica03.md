@@ -108,21 +108,21 @@ from
 from  #tabla_puntos# b) as c
 where c.#id_puntos# = #tabla_puntos#.id
 ```
-Analiza qué hace, investiga para qué funciona este operado <->
+Analiza qué hace, investiga para qué funciona este operador <->
 
 Vamos a trabajar con los datos de teatros que se encuentran en la base, recuerda que los datos deben estár en la misma proyección y acotados al área que se va a trabajar. Para este ejercicio debes elegir una alcaldía, recortar la red de calles y los puntos de teatros y sobre la tabla de teatros crear la columna closest_node que va a contener el nodo más cercano de la red. 
 
 ```sql
-alter table #tabla_puntos# add column closest_node bigint; 
-update #tabla_puntos# set closest_node = c.closest_node
+alter table teatros add column closest_node bigint; 
+update teatros set closest_node = c.closest_node
 from  
-(select b.id as #id_puntos#, (
+(select b.id as id_puntos, (
   SELECT a.id
-  FROM #tabla_vertices# As a
+  FROM osmcdmx_vertices_pgr As a
   ORDER BY b.geom <-> a.the_geom LIMIT 1
 )as closest_node
-from  #tabla_puntos# b) as c
-where c.#id_puntos# = #tabla_puntos#.id
+from  teatros b) as c
+where c.id_puntos = teatros.id 
 ```
 
 Ahora imagina que eres el/la secretaria de cultura de la Ciudad de México y te interesa crear corredores culturales temáticos. En este caso de teatros que puedan encontrarser cerca y representen una mejor oferta cultural. Además, como secretari@ de cultura te interesa fomentar actividades económicas asociadas a dichas actividades como restaurntes o cafeterías. 
@@ -201,3 +201,35 @@ SELECT * FROM  path_4_5)
 **EJERCICIO[5]:** Investiga cómo puedo trazar una línea teniendo la información que me da el agente viajero
 **EJERCICIO[6]:** Investiga cómo calcular áreas de servicio y cómo funciona el algoritmo Dijkstra 
 
+### Areas de servicio 
+
+Para encontrar el area de servicio alrededor de un punto necesitamos conocer todos los nodos de la red que quedan a un menos de un determinado costo del nodo origen. Pgrouting provee una función para este tipo de análisis pgr_drivingDistance. Como ejemplo, vamos a encontrar el area de servicio de 10 kilometros  alrededor del nodo 22084:
+
+``` sql
+create table servicio as
+select * from osmcdmx_vertices_pgr v,
+(SELECT node FROM pgr_drivingDistance(
+        'SELECT id, source, target,
+         (st_length(geom)/1000) as cost
+         FROM osmcdmx',
+        22048, 10
+      )) as service
+where v.id = service.node;
+```
+Ahora pensemos en nuestro caso de estudio, qué pasa si lo que queremos es saber que hay a 10km de distancia sobre la red de todos los teoatros. 
+primero vamos a probar construir un array con los identificadores del nodo mś cercano sobre la red 
+
+```sql
+select array(select closest_node from teatros)
+```
+Esta consulta te da en forma de array todos los nodos y siver como input para determinar el conjunto de puntos de origen en la siguiente consulta
+
+```sql
+create table servicio_array as
+SELECT * FROM pgr_drivingDistance(
+      'SELECT id, source, target,
+       st_length(the_geom) as cost,
+       FROM osmcdmx',
+      (select array(select closest_node from teatros)), 0.5);
+ ```
+ 
