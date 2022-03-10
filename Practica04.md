@@ -83,4 +83,4 @@ ORDER  BY end_vid, agg_cost asc
 
 Aquí lo que hicimos fue asignar a cada teatro todos los nodos de la red que tengan el costo menorusando DISTINCT ON y ORDER BY , al ordenar nodo final y costo, el DISTNCT toma el de menor costo.
 
- 
+[8] Ahora haz el ejercicio de asignar la cafetería más cercana a cada uno de los teatros de la alcalcía 
