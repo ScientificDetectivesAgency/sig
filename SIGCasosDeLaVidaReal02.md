@@ -13,3 +13,5 @@ La Secretaría de Gestión Integral de Riesgos y Protección Civil está interes
 
 
 Propón 4 preguntas de investigación que ayuden a entender mejor el problema, así como una serie de mapas que ayuden a comunicar de forma amigable para cualquier usuario los resultados encontrados 
+
+Replica todo el ejercicio usando solo las herramientas de QGIS
