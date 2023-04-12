@@ -19,22 +19,6 @@ select pgr_createTopology('practica03.ways_coyoacan', 0.001, 'the_geom', 'gid', 
 
 **EJERCICIO[2]:** Agrega la columna de geometría en la tabla de teatros para poder visualizarla como puntos, filtra solo los de coyoacán y visualizalos sobre la red de calles
 
-Ahora todo lo vamos a trabajar con base en los source y los target por lo que es necesario agregar esta información a la tabla de teatros 
-
-```sql
-alter table teatros  add column closest_node bigint; 
-
-update teatros set closest_node = c.closest_node
-from  
-(select b.id, (
-  SELECT a.id
-  FROM ways_vertices_pgr As a
-  ORDER BY b.geom <-> a.the_geom LIMIT 1
-)as closest_node
-from  teatros b) as c
-where c.id = teatros.id
-```
-
 
 Ahora vamos a comenzar a jugar con los costos de traslado sobre la red, comencemos con algo simple. Usemos distancias
 
@@ -129,16 +113,17 @@ Analiza qué hace, investiga para qué funciona este operador <->
 Vamos a trabajar con los datos de teatros que se encuentran en la base, recuerda que los datos deben estár en la misma proyección y acotados al área que se va a trabajar. Para este ejercicio debes elegir una alcaldía, recortar la red de calles y los puntos de teatros y sobre la tabla de teatros crear la columna closest_node que va a contener el nodo más cercano de la red. 
 
 ```sql
-alter table teatros add column closest_node bigint; 
+alter table teatros  add column closest_node bigint; 
+
 update teatros set closest_node = c.closest_node
 from  
-(select b.id as id_puntos, (
+(select b.id, (
   SELECT a.id
-  FROM osmcdmx_vertices_pgr As a
+  FROM ways_vertices_pgr As a
   ORDER BY b.geom <-> a.the_geom LIMIT 1
 )as closest_node
 from  teatros b) as c
-where c.id_puntos = teatros.id 
+where c.id = teatros.id
 ```
 
 Ahora imagina que eres el/la secretaria de cultura de la Ciudad de México y te interesa crear corredores culturales temáticos. En este caso de teatros que puedan encontrarser cerca y representen una mejor oferta cultural. Además, como secretari@ de cultura te interesa fomentar actividades económicas asociadas a dichas actividades como restaurntes o cafeterías. 
