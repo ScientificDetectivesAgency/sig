@@ -159,10 +159,10 @@ En este ejercicio, debes seleccionar zonas donde te interese trazar 4 rutas que 
 
 
 ```sql
-  SELECT seq, node, the_geom FROM pgr_TSP(
+SELECT seq, node, the_geom FROM pgr_TSP(
     $$
     SELECT * FROM pgr_dijkstraCostMatrix(
-        'SELECT id, source, target, cost FROM osmcdmx',
+        'SELECT gid as id, source, target, cost FROM ways',
         (
             SELECT ARRAY[9769, 20604, 48398, 42533, 49819, 41141, 45520] node_array
         ),
@@ -172,7 +172,7 @@ En este ejercicio, debes seleccionar zonas donde te interese trazar 4 rutas que 
     start_id := 9769,
     randomize := false
 ) as res
-JOIN osmcdmx_vertices_pgr ovp 
+JOIN ways_vertices_pgr  ovp 
 ON ovp.id = res.node;
 ```
 
