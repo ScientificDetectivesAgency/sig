@@ -19,6 +19,22 @@ select pgr_createTopology('practica03.ways_coyoacan', 0.001, 'the_geom', 'gid', 
 
 **EJERCICIO[2]:** Agrega la columna de geometría en la tabla de teatros para poder visualizarla como puntos, filtra solo los de coyoacán y visualizalos sobre la red de calles
 
+Ahora todo lo vamos a trabajar con base en los source y los target por lo que es necesario agregar esta información a la tabla de teatros 
+
+```sql
+alter table teatros  add column closest_node bigint; 
+
+update teatros set closest_node = c.closest_node
+from  
+(select b.id, (
+  SELECT a.id
+  FROM ways_vertices_pgr As a
+  ORDER BY b.geom <-> a.the_geom LIMIT 1
+)as closest_node
+from  teatros b) as c
+where c.id = teatros.id
+```
+
 
 Ahora vamos a comenzar a jugar con los costos de traslado sobre la red, comencemos con algo simple. Usemos distancias
 
